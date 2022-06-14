@@ -1,9 +1,10 @@
 // internal imports 
 const pool = require('../utilities/dbConnection')
+const { encrypt, decrypt } = require('../utilities/encryptDecrypt')
 
 // external imports 
-const jwt = require('jsonwebtoken');
-const { encrypt, decrypt } = require('../utilities/encryptDecrypt');
+const jwt = require('jsonwebtoken')
+const bcrypt = require("bcrypt")
 
 // User Login
 async function userLogin(req, res, next) {
@@ -75,14 +76,9 @@ async function userLogin(req, res, next) {
 
 // User registraion 
 async function userRegistraiton(req, res, next) {
-    const defaultAbility = '[{"action":"manage","subject":"app"},{"action":"read","subject":"dashboard"}]'
-    const { firstName, lastName, email, walletAddress } = req.body
-    const encryptedFirstName = encrypt(firstName)
-    const encryptedLastName = encrypt(lastName)
-    const encryptedEmail = encrypt(email)
-    const encryptedWalletAddress = encrypt(walletAddress)
-    const ability = req.body.ability || defaultAbility
+    const { name, address, business_name, logo, email, password } = req.body
     const role = req.body.role || 'user'
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
     pool.query('INSERT INTO peoples (firstname, lastname, email, walletAddress, ability, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [encryptedFirstName, encryptedLastName, encryptedEmail, encryptedWalletAddress, ability, role], (error, results) => {
         if (error) {
             console.log(error)
@@ -116,4 +112,9 @@ async function userRegistraiton(req, res, next) {
             });
         }
     })
+}
+
+module.exports = {
+    userLogin,
+    userRegistraiton
 }
